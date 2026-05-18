@@ -4,7 +4,10 @@
       "PowerShell($java = try { \\(& java -version 2>&1\\) -join \"`n\" } catch { \"NOT_FOUND\" }; $mvn = try { \\(& mvn -version 2>&1\\) -join \"`n\" } catch { \"NOT_FOUND\" }; $node = try { \\(& node --version 2>&1\\) -join \"`n\" } catch { \"NOT_FOUND\" }; $npm = try { \\(& npm --version 2>&1\\) -join \"`n\" } catch { \"NOT_FOUND\" }; $winget = try { \\(& winget --version 2>&1\\) -join \"`n\" } catch { \"NOT_FOUND\" }; \"JAVA:`n$java`n---`nMAVEN:`n$mvn`n---`nNODE:`n$node`n---`nNPM:`n$npm`n---`nWINGET:`n$winget\")",
       "PowerShell(winget install --id Apache.Maven --silent --accept-source-agreements --accept-package-agreements)",
       "PowerShell(winget install --id Apache.Maven --source winget --silent --accept-source-agreements --accept-package-agreements)",
-      "PowerShell(winget search Maven)"
+      "PowerShell(winget search Maven)",
+      "Bash(git init *)",
+      "Bash(git add *)",
+      "Bash(git commit *)"
     ]
   }
 }
