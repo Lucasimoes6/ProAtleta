@@ -9,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.Instant;
 import java.util.List;
 
 @RestController
@@ -39,11 +40,28 @@ public class AthleteController {
         athlete.setBirthDate(req.birthDate());
         athlete.setHeightCm(req.heightCm());
         athlete.setWeightKg(req.weightKg());
-        athlete.setSport(req.sport());
+        // App é dedicado ao Jiu-Jitsu nesta versão. Ignora qualquer modalidade
+        // que o cliente enviar — evita drift de perfis para outras modalidades
+        // via API direta.
+        athlete.setSport(Athlete.Sport.JIU_JITSU);
         athlete.setLevel(req.level());
         athlete.setPrimaryGoal(req.primaryGoal());
         athlete.setNotes(req.notes());
 
+        return AthleteDTOs.AthleteResponse.from(athleteRepository.save(athlete));
+    }
+
+    @PostMapping("/me/terms")
+    public AthleteDTOs.AthleteResponse acceptTerms(@AuthenticationPrincipal User principal,
+                                                   @Valid @RequestBody AthleteDTOs.TermsAcceptanceRequest req) {
+        if (!Boolean.TRUE.equals(req.responsibilityTerm()) || !Boolean.TRUE.equals(req.dataUsageTerm())) {
+            throw new IllegalArgumentException("Os dois termos devem ser aceitos.");
+        }
+        Athlete athlete = athleteRepository.findByUserId(principal.getId())
+                .orElseThrow(() -> new NotFoundException(
+                        "Perfil de atleta não encontrado. Cadastre seu perfil antes de aceitar os termos."));
+        athlete.setTermsAccepted(true);
+        athlete.setTermsAcceptedAt(Instant.now());
         return AthleteDTOs.AthleteResponse.from(athleteRepository.save(athlete));
     }
 

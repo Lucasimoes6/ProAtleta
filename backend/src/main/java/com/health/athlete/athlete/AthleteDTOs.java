@@ -4,6 +4,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Past;
 import jakarta.validation.constraints.Positive;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.UUID;
 
@@ -13,7 +14,7 @@ public class AthleteDTOs {
             @NotNull @Past LocalDate birthDate,
             @Positive Double heightCm,
             @Positive Double weightKg,
-            @NotNull Athlete.Sport sport,
+            Athlete.Sport sport,
             @NotNull Athlete.Level level,
             @NotNull Athlete.Goal primaryGoal,
             String notes
@@ -30,7 +31,10 @@ public class AthleteDTOs {
             Athlete.Sport sport,
             Athlete.Level level,
             Athlete.Goal primaryGoal,
-            String notes
+            String notes,
+            Boolean termsAccepted,
+            Instant termsAcceptedAt,
+            Instant onboardingCompletedAt
     ) {
         public static AthleteResponse from(Athlete a) {
             return new AthleteResponse(
@@ -44,8 +48,16 @@ public class AthleteDTOs {
                     a.getSport(),
                     a.getLevel(),
                     a.getPrimaryGoal(),
-                    a.getNotes()
+                    a.getNotes(),
+                    a.getTermsAccepted(),
+                    a.getTermsAcceptedAt(),
+                    a.getOnboardingCompletedAt()
             );
         }
     }
+
+    public record TermsAcceptanceRequest(
+            @NotNull Boolean responsibilityTerm,
+            @NotNull Boolean dataUsageTerm
+    ) {}
 }

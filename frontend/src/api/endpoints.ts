@@ -1,13 +1,40 @@
 import { api } from './client';
 import type {
-  Anamnesis, Athlete, AuthResponse, Injury, TrainingPlan,
+  Anamnesis, Athlete, AuthResponse, CreateAnamnesisRequest, Injury, LibraryExercise,
+  LibraryExerciseCategory, LibraryExerciseStage, OnboardingStatus,
+  PARQResponse, Role, TrainingPlan,
 } from '@/types/domain';
+
+export interface MeResponse {
+  id: string;
+  email: string;
+  fullName: string;
+  role: Role;
+  createdAt: string;
+}
 
 export const authApi = {
   login: (email: string, password: string) =>
     api.post<AuthResponse>('/auth/login', { email, password }).then((r) => r.data),
   register: (data: { email: string; password: string; fullName: string; role?: string }) =>
     api.post<AuthResponse>('/auth/register', data).then((r) => r.data),
+
+  me: () => api.get<MeResponse>('/auth/me').then((r) => r.data),
+  updateProfile: (data: { fullName: string; email: string }) =>
+    api.patch<AuthResponse>('/auth/me', data).then((r) => r.data),
+  changePassword: (data: { currentPassword: string; newPassword: string }) =>
+    api.put<void>('/auth/me/password', data),
+  deleteAccount: () => api.delete<void>('/auth/me'),
+
+  requestPasswordReset: (email: string) =>
+    api.post<{ ok: boolean; token?: string; expiresAt?: string; message?: string }>(
+      '/auth/password-reset/request', { email },
+    ).then((r) => r.data),
+  confirmPasswordReset: (token: string, newPassword: string) =>
+    api.post<void>('/auth/password-reset/confirm', { token, newPassword }),
+
+  onboardingStatus: () =>
+    api.get<OnboardingStatus>('/auth/onboarding-status').then((r) => r.data),
 };
 
 export const athleteApi = {
@@ -15,10 +42,27 @@ export const athleteApi = {
   upsertMe: (data: Partial<Athlete>) =>
     api.put<Athlete>('/athletes/me', data).then((r) => r.data),
   list: () => api.get<Athlete[]>('/athletes').then((r) => r.data),
+  acceptTerms: (data: { responsibilityTerm: boolean; dataUsageTerm: boolean }) =>
+    api.post<Athlete>('/athletes/me/terms', data).then((r) => r.data),
+};
+
+export const parqApi = {
+  submit: (data: {
+    q1: boolean; q2: boolean; q3: boolean; q4: boolean;
+    q5: boolean; q6: boolean; q7: boolean; acceptedRisk?: boolean;
+  }) => api.post<PARQResponse>('/parq', data).then((r) => r.data),
+  latest: () => api.get<PARQResponse>('/parq/me/latest').then((r) => r.data),
+};
+
+export const exerciseLibraryApi = {
+  list: (filters?: {
+    category?: LibraryExerciseCategory; stage?: LibraryExerciseStage; region?: string;
+  }) => api.get<LibraryExercise[]>('/exercises', { params: filters }).then((r) => r.data),
+  get: (id: string) => api.get<LibraryExercise>(`/exercises/${id}`).then((r) => r.data),
 };
 
 export const anamnesisApi = {
-  create: (data: Partial<Anamnesis>) =>
+  create: (data: CreateAnamnesisRequest) =>
     api.post<Anamnesis>('/anamnesis', data).then((r) => r.data),
   latest: () => api.get<Anamnesis>('/anamnesis/me/latest').then((r) => r.data),
   history: () => api.get<Anamnesis[]>('/anamnesis/me').then((r) => r.data),

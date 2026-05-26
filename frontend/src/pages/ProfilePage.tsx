@@ -1,11 +1,9 @@
 import { useEffect, useState, FormEvent } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { athleteApi } from '@/api/endpoints';
-import type { Athlete, Goal, Level, Sport } from '@/types/domain';
+import { useToast } from '@/components/Toast';
+import type { Athlete, Goal, Level } from '@/types/domain';
 
-const SPORTS: Sport[] = [
-  'FUTEBOL', 'CORRIDA', 'CICLISMO', 'NATACAO', 'MUSCULACAO', 'CROSSFIT',
-  'VOLEI', 'BASQUETE', 'TENIS', 'LUTAS', 'OUTRO',
-];
 const LEVELS: Level[] = ['INICIANTE', 'INTERMEDIARIO', 'AVANCADO', 'ELITE'];
 const GOALS: Goal[] = [
   'HIPERTROFIA', 'FORCA', 'RESISTENCIA', 'EMAGRECIMENTO',
@@ -14,31 +12,43 @@ const GOALS: Goal[] = [
 
 export default function ProfilePage() {
   const [profile, setProfile] = useState<Partial<Athlete>>({
-    sport: 'CORRIDA',
+    sport: 'JIU_JITSU',
     level: 'INICIANTE',
-    primaryGoal: 'SAUDE_GERAL',
+    primaryGoal: 'PERFORMANCE_ESPORTIVA',
   });
-  const [saved, setSaved] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const toast = useToast();
+  const navigate = useNavigate();
 
   useEffect(() => {
     athleteApi.me().then((data) => {
-      if (data) setProfile(data);
+      if (data) setProfile({ ...data, sport: 'JIU_JITSU' });
     }).catch(() => {});
   }, []);
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
-    setError(null);
     setLoading(true);
     try {
-      const saved = await athleteApi.upsertMe(profile);
+      // Envia apenas os campos que o UpsertRequest do backend espera; campos
+      // calculados (id, age, email, fullName, onboardingCompletedAt, ...)
+      // ficam no estado mas não vão no payload.
+      const saved = await athleteApi.upsertMe({
+        birthDate: profile.birthDate,
+        heightCm: profile.heightCm,
+        weightKg: profile.weightKg,
+        sport: 'JIU_JITSU',
+        level: profile.level,
+        primaryGoal: profile.primaryGoal,
+        notes: profile.notes,
+      });
       setProfile(saved);
-      setSaved(true);
-      setTimeout(() => setSaved(false), 2500);
+      toast.success('Perfil salvo com sucesso.');
+      // Empurra de volta pra "/" — o OnboardingGate re-valida o status e
+      // redireciona pra próxima etapa (termos, PAR-Q, anamnese ou dashboard).
+      navigate('/');
     } catch {
-      setError('Erro ao salvar perfil. Verifique os campos e tente novamente.');
+      toast.error('Erro ao salvar perfil. Verifique os campos e tente novamente.');
     } finally {
       setLoading(false);
     }
@@ -51,15 +61,8 @@ export default function ProfilePage() {
     <>
       <header>
         <h2>Perfil do Atleta</h2>
-        <p>Conte sobre você para receber um plano personalizado</p>
+        <p>Esta versão é dedicada a praticantes de Jiu-Jitsu</p>
       </header>
-
-      {error && <div className="error">{error}</div>}
-      {saved && (
-        <div style={{ marginBottom: 16 }}>
-          <span className="badge accent">Perfil salvo com sucesso</span>
-        </div>
-      )}
 
       <form onSubmit={submit} className="card">
         <div className="row cols-2">
@@ -73,13 +76,8 @@ export default function ProfilePage() {
             />
           </div>
           <div className="field">
-            <label>Esporte</label>
-            <select
-              value={profile.sport}
-              onChange={(e) => update('sport', e.target.value as Sport)}
-            >
-              {SPORTS.map((s) => <option key={s} value={s}>{s}</option>)}
-            </select>
+            <label>Modalidade</label>
+            <input value="Jiu-Jitsu" disabled />
           </div>
         </div>
 
