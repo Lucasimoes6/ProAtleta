@@ -9,4 +9,5 @@ import java.util.UUID;
 public interface AnamnesisRepository extends JpaRepository<Anamnesis, UUID> {
     List<Anamnesis> findByAthleteIdOrderByCreatedAtDesc(UUID athleteId);
     Optional<Anamnesis> findFirstByAthleteIdOrderByCreatedAtDesc(UUID athleteId);
+    void deleteByAthleteId(UUID athleteId);
 }

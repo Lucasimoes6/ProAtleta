@@ -148,7 +148,8 @@ public class PeriodizationEngine {
 
         return switch (athlete.getSport()) {
             case CORRIDA, CICLISMO -> aerobicTemplate(phase, index);
-            case FUTEBOL, BASQUETE, VOLEI, TENIS, LUTAS -> sportSpecificTemplate(phase, index, total);
+            case FUTEBOL, BASQUETE, VOLEI, TENIS, LUTAS, JIU_JITSU ->
+                    sportSpecificTemplate(phase, index, total);
             case NATACAO -> aerobicTemplate(phase, index);
             case CROSSFIT -> crossfitTemplate(phase, index);
             default -> upperFocus ? upperBodyStrength(phase) : lowerBodyStrength(phase);

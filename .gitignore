@@ -26,3 +26,6 @@ Thumbs.db
 frontend/.env
 frontend/.env.local
 frontend/.env.*.local
+
+# H2 local file database (dev profile)
+backend/data/

@@ -15,7 +15,10 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (r) => r,
   (err) => {
-    if (err.response?.status === 401) {
+    // 401: token inválido/ausente. 403: token estruturalmente válido mas o
+    // usuário foi removido (ex.: reset do banco em dev) — efeito é o mesmo.
+    const status = err.response?.status;
+    if (status === 401 || status === 403) {
       useAuthStore.getState().logout();
     }
     return Promise.reject(err);

@@ -1,23 +1,44 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   Bar, BarChart, CartesianGrid, Legend, Line, LineChart,
   ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from 'recharts';
 import { trainingApi } from '@/api/endpoints';
+import { useToast } from '@/components/Toast';
+import { useThemeStore } from '@/store/theme';
 import type { TrainingPlan, TrainingWeek } from '@/types/domain';
 
-const PHASE_COLORS: Record<string, string> = {
-  BASE: '#4fa8ff',
-  INTENSIDADE: '#f59e0b',
-  PICO: '#ef4444',
-  RECUPERACAO: '#6ee7b7',
-};
+function readCssVar(name: string, fallback: string): string {
+  if (typeof window === 'undefined') return fallback;
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback;
+}
 
 export default function TrainingPage() {
   const [plan, setPlan] = useState<TrainingPlan | null>(null);
   const [selectedWeek, setSelectedWeek] = useState<TrainingWeek | null>(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const toast = useToast();
+  const theme = useThemeStore((s) => s.theme);
+
+  const colors = useMemo(() => ({
+    primary: readCssVar('--primary', '#4fa8ff'),
+    warning: readCssVar('--warning', '#f59e0b'),
+    danger: readCssVar('--danger', '#ef4444'),
+    accent: readCssVar('--accent', '#6ee7b7'),
+    grid: readCssVar('--chart-grid', '#2b3457'),
+    axis: readCssVar('--chart-axis', '#8b95b1'),
+    tooltipBg: readCssVar('--bg-elev', '#1c2444'),
+    tooltipBorder: readCssVar('--border', '#2b3457'),
+    tooltipText: readCssVar('--text', '#e8ecf3'),
+  }), [theme]);
+
+  // Cores das fases lidas do tema atual.
+  const phaseColors: Record<string, string> = useMemo(() => ({
+    BASE: colors.primary,
+    INTENSIDADE: colors.warning,
+    PICO: colors.danger,
+    RECUPERACAO: colors.accent,
+  }), [colors]);
 
   useEffect(() => {
     trainingApi.current().then((p) => {
@@ -29,26 +50,30 @@ export default function TrainingPage() {
   }, []);
 
   const generate = async () => {
-    setError(null);
     setLoading(true);
     try {
       const newPlan = await trainingApi.generate();
       setPlan(newPlan);
       setSelectedWeek(newPlan.weeks[0]);
+      toast.success('Plano de 12 semanas gerado.');
     } catch (err: any) {
-      setError(err?.response?.data?.message ?? 'Faça uma anamnese antes de gerar o plano.');
+      toast.error(err?.response?.data?.message ?? 'Faça uma anamnese antes de gerar o plano.');
     } finally {
       setLoading(false);
     }
   };
 
   const completeSession = async (sessionId: string) => {
-    await trainingApi.completeSession(sessionId);
-    const refreshed = await trainingApi.current();
-    setPlan(refreshed);
-    if (selectedWeek) {
-      const updated = refreshed.weeks.find((w) => w.id === selectedWeek.id);
-      if (updated) setSelectedWeek(updated);
+    try {
+      await trainingApi.completeSession(sessionId);
+      const refreshed = await trainingApi.current();
+      setPlan(refreshed);
+      if (selectedWeek) {
+        const updated = refreshed.weeks.find((w) => w.id === selectedWeek.id);
+        if (updated) setSelectedWeek(updated);
+      }
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message ?? 'Erro ao marcar sessão.');
     }
   };
 
@@ -59,7 +84,6 @@ export default function TrainingPage() {
           <h2>Plano de Treinamento</h2>
           <p>Periodização inteligente baseada na sua anamnese</p>
         </header>
-        {error && <div className="error">{error}</div>}
         <div className="card empty">
           <h3>Nenhum plano ativo</h3>
           <p style={{ margin: '12px 0 20px' }}>
@@ -100,15 +124,20 @@ export default function TrainingPage() {
         <h3 style={{ marginBottom: 16 }}>Curva de Periodização (12 semanas)</h3>
         <ResponsiveContainer width="100%" height={260}>
           <LineChart data={chartData}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#2b3457" />
-            <XAxis dataKey="semana" stroke="#8b95b1" />
-            <YAxis stroke="#8b95b1" />
+            <CartesianGrid strokeDasharray="3 3" stroke={colors.grid} />
+            <XAxis dataKey="semana" stroke={colors.axis} />
+            <YAxis stroke={colors.axis} />
             <Tooltip
-              contentStyle={{ background: '#1c2444', border: '1px solid #2b3457', borderRadius: 8 }}
+              contentStyle={{
+                background: colors.tooltipBg,
+                border: `1px solid ${colors.tooltipBorder}`,
+                borderRadius: 8,
+                color: colors.tooltipText,
+              }}
             />
             <Legend />
-            <Line type="monotone" dataKey="volume" stroke="#4fa8ff" strokeWidth={2} />
-            <Line type="monotone" dataKey="intensidade" stroke="#f59e0b" strokeWidth={2} />
+            <Line type="monotone" dataKey="volume" stroke={colors.primary} strokeWidth={2} />
+            <Line type="monotone" dataKey="intensidade" stroke={colors.warning} strokeWidth={2} />
           </LineChart>
         </ResponsiveContainer>
       </div>
@@ -124,7 +153,7 @@ export default function TrainingPage() {
               style={{
                 padding: '8px 14px',
                 fontSize: 13,
-                borderLeft: `3px solid ${PHASE_COLORS[w.phase]}`,
+                borderLeft: `3px solid ${phaseColors[w.phase]}`,
               }}
             >
               S{w.weekNumber}
@@ -211,12 +240,17 @@ export default function TrainingPage() {
                   duracao: s.durationMinutes,
                 }))}
               >
-                <XAxis dataKey="dia" stroke="#8b95b1" />
-                <YAxis stroke="#8b95b1" />
+                <XAxis dataKey="dia" stroke={colors.axis} />
+                <YAxis stroke={colors.axis} />
                 <Tooltip
-                  contentStyle={{ background: '#1c2444', border: '1px solid #2b3457', borderRadius: 8 }}
+                  contentStyle={{
+                    background: colors.tooltipBg,
+                    border: `1px solid ${colors.tooltipBorder}`,
+                    borderRadius: 8,
+                    color: colors.tooltipText,
+                  }}
                 />
-                <Bar dataKey="duracao" fill="#4fa8ff" radius={[6, 6, 0, 0]} />
+                <Bar dataKey="duracao" fill={colors.primary} radius={[6, 6, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>

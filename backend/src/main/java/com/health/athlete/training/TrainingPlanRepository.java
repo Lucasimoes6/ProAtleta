@@ -9,4 +9,5 @@ import java.util.UUID;
 public interface TrainingPlanRepository extends JpaRepository<TrainingPlan, UUID> {
     List<TrainingPlan> findByAthleteIdOrderByStartDateDesc(UUID athleteId);
     Optional<TrainingPlan> findFirstByAthleteIdOrderByStartDateDesc(UUID athleteId);
+    void deleteByAthleteId(UUID athleteId);
 }
