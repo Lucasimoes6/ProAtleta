@@ -16,13 +16,17 @@ export default function ProfilePage() {
     level: 'INICIANTE',
     primaryGoal: 'PERFORMANCE_ESPORTIVA',
   });
+  const [isExistingProfile, setIsExistingProfile] = useState(false);
   const [loading, setLoading] = useState(false);
   const toast = useToast();
   const navigate = useNavigate();
 
   useEffect(() => {
     athleteApi.me().then((data) => {
-      if (data) setProfile({ ...data, sport: 'JIU_JITSU' });
+      if (data) {
+        setProfile({ ...data, sport: 'JIU_JITSU' });
+        setIsExistingProfile(true);
+      }
     }).catch(() => {});
   }, []);
 
@@ -30,9 +34,6 @@ export default function ProfilePage() {
     e.preventDefault();
     setLoading(true);
     try {
-      // Envia apenas os campos que o UpsertRequest do backend espera; campos
-      // calculados (id, age, email, fullName, onboardingCompletedAt, ...)
-      // ficam no estado mas não vão no payload.
       const saved = await athleteApi.upsertMe({
         birthDate: profile.birthDate,
         heightCm: profile.heightCm,
@@ -43,10 +44,12 @@ export default function ProfilePage() {
         notes: profile.notes,
       });
       setProfile(saved);
+      setIsExistingProfile(true);
       toast.success('Perfil salvo com sucesso.');
-      // Empurra de volta pra "/" — o OnboardingGate re-valida o status e
-      // redireciona pra próxima etapa (termos, PAR-Q, anamnese ou dashboard).
-      navigate('/');
+      if (!isExistingProfile) {
+        // Primeira vez: deixa o OnboardingGate re-validar e avançar para o próximo passo.
+        navigate('/');
+      }
     } catch {
       toast.error('Erro ao salvar perfil. Verifique os campos e tente novamente.');
     } finally {
