@@ -7,4 +7,5 @@ import java.util.UUID;
 
 public interface InjuryRepository extends JpaRepository<Injury, UUID> {
     List<Injury> findByAthleteIdOrderByOnsetDateDesc(UUID athleteId);
+    void deleteByAthleteId(UUID athleteId);
 }
