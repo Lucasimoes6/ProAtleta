@@ -4,6 +4,7 @@ import com.health.athlete.athlete.Athlete;
 import com.health.athlete.athlete.AthleteRepository;
 import com.health.athlete.auth.User;
 import com.health.athlete.common.NotFoundException;
+import java.time.Instant;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -42,10 +43,27 @@ public class AnamnesisController {
                 .restingHeartRate(req.restingHeartRate())
                 .averageSleepHours(req.averageSleepHours())
                 .perceivedStressLevel(req.perceivedStressLevel())
+                .recoveringFromInjury(req.recoveringFromInjury())
+                .currentInjuryDescription(req.currentInjuryDescription())
+                .improvementGoals(req.improvementGoals() == null ? List.of() : req.improvementGoals())
+                .physicalLimitations(req.physicalLimitations() == null ? List.of() : req.physicalLimitations())
+                .physicalLimitationsOther(req.physicalLimitationsOther())
+                .jiuJitsuInjuriesHad(req.jiuJitsuInjuriesHad() == null ? List.of() : req.jiuJitsuInjuriesHad())
+                .jiuJitsuInjuriesCurrent(req.jiuJitsuInjuriesCurrent() == null ? List.of() : req.jiuJitsuInjuriesCurrent())
+                .jiuJitsuDifficulties(req.jiuJitsuDifficulties() == null ? List.of() : req.jiuJitsuDifficulties())
                 .build();
 
         anamnesis.setAutoReport(evaluator.buildReport(athlete, anamnesis));
-        return AnamnesisDTOs.AnamnesisResponse.from(anamnesisRepository.save(anamnesis));
+        anamnesis.setPrescribedExercises(evaluator.buildPrescription(athlete, anamnesis));
+        AnamnesisDTOs.AnamnesisResponse resp = AnamnesisDTOs.AnamnesisResponse.from(
+                anamnesisRepository.save(anamnesis));
+
+        if (athlete.getOnboardingCompletedAt() == null
+                && Boolean.TRUE.equals(athlete.getTermsAccepted())) {
+            athlete.setOnboardingCompletedAt(Instant.now());
+            athleteRepository.save(athlete);
+        }
+        return resp;
     }
 
     @GetMapping("/me/latest")

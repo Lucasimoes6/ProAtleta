@@ -19,7 +19,7 @@ public class Athlete {
 
     public enum Sport {
         FUTEBOL, CORRIDA, CICLISMO, NATACAO, MUSCULACAO, CROSSFIT,
-        VOLEI, BASQUETE, TENIS, LUTAS, OUTRO
+        VOLEI, BASQUETE, TENIS, LUTAS, JIU_JITSU, OUTRO
     }
 
     public enum Level { INICIANTE, INTERMEDIARIO, AVANCADO, ELITE }
@@ -57,6 +57,10 @@ public class Athlete {
 
     @Column(length = 1000)
     private String notes;
+
+    private Boolean termsAccepted;
+    private Instant termsAcceptedAt;
+    private Instant onboardingCompletedAt;
 
     @Column(nullable = false)
     private Instant createdAt;

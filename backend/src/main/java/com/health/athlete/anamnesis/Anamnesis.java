@@ -73,6 +73,55 @@ public class Anamnesis {
     private Integer averageSleepHours;
     private Integer perceivedStressLevel; // 1..10
 
+    private Boolean recoveringFromInjury;
+
+    @Column(length = 500)
+    private String currentInjuryDescription;
+
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "anamnesis_improvement_goals", joinColumns = @JoinColumn(name = "anamnesis_id"))
+    @Enumerated(EnumType.STRING)
+    @Column(name = "goal")
+    @Builder.Default
+    private List<ImprovementGoal> improvementGoals = new ArrayList<>();
+
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "anamnesis_physical_limitations", joinColumns = @JoinColumn(name = "anamnesis_id"))
+    @Enumerated(EnumType.STRING)
+    @Column(name = "limitation")
+    @Builder.Default
+    private List<PhysicalLimitation> physicalLimitations = new ArrayList<>();
+
+    @Column(length = 500)
+    private String physicalLimitationsOther;
+
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "anamnesis_jj_injuries_had", joinColumns = @JoinColumn(name = "anamnesis_id"))
+    @Enumerated(EnumType.STRING)
+    @Column(name = "injury")
+    @Builder.Default
+    private List<JiuJitsuInjury> jiuJitsuInjuriesHad = new ArrayList<>();
+
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "anamnesis_jj_injuries_current", joinColumns = @JoinColumn(name = "anamnesis_id"))
+    @Enumerated(EnumType.STRING)
+    @Column(name = "injury")
+    @Builder.Default
+    private List<JiuJitsuInjury> jiuJitsuInjuriesCurrent = new ArrayList<>();
+
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "anamnesis_jj_difficulties", joinColumns = @JoinColumn(name = "anamnesis_id"))
+    @Enumerated(EnumType.STRING)
+    @Column(name = "difficulty")
+    @Builder.Default
+    private List<JiuJitsuDifficulty> jiuJitsuDifficulties = new ArrayList<>();
+
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "anamnesis_prescribed_exercises", joinColumns = @JoinColumn(name = "anamnesis_id"))
+    @OrderColumn(name = "ord")
+    @Builder.Default
+    private List<PrescribedExercise> prescribedExercises = new ArrayList<>();
+
     @Column(length = 4000)
     private String autoReport;
 
