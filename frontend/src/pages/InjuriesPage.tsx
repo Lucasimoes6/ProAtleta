@@ -1,19 +1,33 @@
 import { useEffect, useState, FormEvent } from 'react';
 import { injuryApi } from '@/api/endpoints';
+import { useToast } from '@/components/Toast';
 import type { Injury } from '@/types/domain';
 
-const TYPES = ['MUSCULAR', 'LIGAMENTAR', 'TENDINOSA', 'OSSEA', 'ARTICULAR', 'MENISCAL', 'OUTRA'];
-const REGIONS = [
+type InjuryType = 'MUSCULAR' | 'LIGAMENTAR' | 'TENDINOSA' | 'OSSEA' | 'ARTICULAR' | 'MENISCAL' | 'OUTRA';
+type InjuryRegion = 'JOELHO' | 'OMBRO' | 'LOMBAR' | 'CERVICAL' | 'QUADRIL' | 'TORNOZELO' | 'COTOVELO'
+  | 'PUNHO' | 'COXA' | 'PANTURRILHA' | 'BRACO' | 'ANTEBRACO' | 'OUTRO';
+type InjurySeverity = 'LEVE' | 'MODERADA' | 'GRAVE';
+
+const TYPES: InjuryType[] = ['MUSCULAR', 'LIGAMENTAR', 'TENDINOSA', 'OSSEA', 'ARTICULAR', 'MENISCAL', 'OUTRA'];
+const REGIONS: InjuryRegion[] = [
   'JOELHO', 'OMBRO', 'LOMBAR', 'CERVICAL', 'QUADRIL', 'TORNOZELO', 'COTOVELO', 'PUNHO',
   'COXA', 'PANTURRILHA', 'BRACO', 'ANTEBRACO', 'OUTRO',
 ];
-const SEVERITIES = ['LEVE', 'MODERADA', 'GRAVE'];
+const SEVERITIES: InjurySeverity[] = ['LEVE', 'MODERADA', 'GRAVE'];
+
+interface InjuryForm {
+  type: InjuryType;
+  region: InjuryRegion;
+  severity: InjurySeverity;
+  onsetDate: string;
+  description: string;
+}
 
 export default function InjuriesPage() {
   const [list, setList] = useState<Injury[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [selected, setSelected] = useState<Injury | null>(null);
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<InjuryForm>({
     type: 'MUSCULAR',
     region: 'JOELHO',
     severity: 'LEVE',
@@ -21,11 +35,15 @@ export default function InjuriesPage() {
     description: '',
   });
   const [loading, setLoading] = useState(false);
+  const toast = useToast();
 
-  const refresh = () => injuryApi.list().then(setList).catch(() => {});
+  const refresh = () => injuryApi.list().then(setList).catch(() => {
+    toast.error('Erro ao carregar lesões.');
+  });
 
   useEffect(() => {
     refresh();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const submit = async (e: FormEvent) => {
@@ -35,15 +53,23 @@ export default function InjuriesPage() {
       await injuryApi.create(form as Partial<Injury>);
       await refresh();
       setShowForm(false);
+      toast.success('Lesão registrada e protocolo gerado.');
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message ?? 'Erro ao registrar lesão.');
     } finally {
       setLoading(false);
     }
   };
 
   const resolve = async (id: string) => {
-    await injuryApi.resolve(id);
-    await refresh();
-    if (selected?.id === id) setSelected(null);
+    try {
+      await injuryApi.resolve(id);
+      await refresh();
+      if (selected?.id === id) setSelected(null);
+      toast.success('Lesão marcada como recuperada.');
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message ?? 'Erro ao marcar lesão.');
+    }
   };
 
   const severityClass = (s: string) =>
@@ -68,7 +94,7 @@ export default function InjuriesPage() {
               <label>Tipo</label>
               <select
                 value={form.type}
-                onChange={(e) => setForm({ ...form, type: e.target.value })}
+                onChange={(e) => setForm({ ...form, type: e.target.value as InjuryType })}
               >
                 {TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
               </select>
@@ -77,7 +103,7 @@ export default function InjuriesPage() {
               <label>Região</label>
               <select
                 value={form.region}
-                onChange={(e) => setForm({ ...form, region: e.target.value })}
+                onChange={(e) => setForm({ ...form, region: e.target.value as InjuryRegion })}
               >
                 {REGIONS.map((r) => <option key={r} value={r}>{r}</option>)}
               </select>
@@ -88,7 +114,7 @@ export default function InjuriesPage() {
               <label>Gravidade</label>
               <select
                 value={form.severity}
-                onChange={(e) => setForm({ ...form, severity: e.target.value })}
+                onChange={(e) => setForm({ ...form, severity: e.target.value as InjurySeverity })}
               >
                 {SEVERITIES.map((s) => <option key={s} value={s}>{s}</option>)}
               </select>

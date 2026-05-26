@@ -73,9 +73,13 @@ public class InjuryController {
     }
 
     @PatchMapping("/{id}/resolve")
-    public InjuryResponse resolve(@PathVariable UUID id) {
+    public InjuryResponse resolve(@AuthenticationPrincipal User principal, @PathVariable UUID id) {
         Injury injury = injuryRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Lesão não encontrada"));
+        // Ownership check — sem isso, qualquer user logado poderia resolver lesão de outro.
+        if (!injury.getAthlete().getUser().getId().equals(principal.getId())) {
+            throw new NotFoundException("Lesão não encontrada");
+        }
         injury.setStatus(Injury.Status.RECUPERADA);
         injury.setResolvedDate(LocalDate.now());
         return InjuryResponse.from(injuryRepository.save(injury));

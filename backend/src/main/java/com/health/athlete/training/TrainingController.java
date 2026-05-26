@@ -21,6 +21,7 @@ import java.util.UUID;
 public class TrainingController {
 
     private final TrainingPlanRepository planRepository;
+    private final TrainingSessionRepository sessionRepository;
     private final AthleteRepository athleteRepository;
     private final AnamnesisRepository anamnesisRepository;
     private final PeriodizationEngine engine;
@@ -52,18 +53,14 @@ public class TrainingController {
     }
 
     @PatchMapping("/sessions/{sessionId}/complete")
-    public ResponseEntity<Void> markCompleted(@PathVariable UUID sessionId) {
-        // Para simplicidade, atualiza diretamente — em produção, verificar autorização do atleta dono
-        return planRepository.findAll().stream()
-                .flatMap(p -> p.getWeeks().stream())
-                .flatMap(w -> w.getSessions().stream())
-                .filter(s -> s.getId().equals(sessionId))
-                .findFirst()
+    public ResponseEntity<Void> markCompleted(@AuthenticationPrincipal User principal,
+                                              @PathVariable UUID sessionId) {
+        return sessionRepository.findByIdAndOwnerUserId(sessionId, principal.getId())
                 .map(s -> {
                     s.setCompleted(true);
-                    planRepository.save(s.getWeek().getPlan());
-                    return ResponseEntity.ok().<Void>build();
+                    sessionRepository.save(s);
+                    return ResponseEntity.noContent().<Void>build();
                 })
-                .orElse(ResponseEntity.notFound().build());
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 }
