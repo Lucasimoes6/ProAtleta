@@ -20,7 +20,8 @@ spring:
     show-sql: ${SHOW_SQL:false}
 
 server:
-  port: 8080
+  # Railway/Render injetam PORT — local cai no default 8080.
+  port: ${PORT:8080}
   error:
     include-message: always
 
