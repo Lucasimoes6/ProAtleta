@@ -43,16 +43,20 @@ public class Athlete {
     private Double heightCm;
     private Double weightKg;
 
+    // columnDefinition="varchar(50)" evita que o Hibernate gere um CHECK
+    // constraint com os valores do enum. Sem isso, adicionar um valor novo
+    // ao enum (ex.: JIU_JITSU) quebra INSERTs em DBs antigos que ainda
+    // carregam o constraint com os valores velhos.
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "varchar(50)")
     private Sport sport;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "varchar(50)")
     private Level level;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "varchar(50)")
     private Goal primaryGoal;
 
     @Column(length = 1000)
